@@ -3,7 +3,7 @@
 # --- Python 3.6.2
 #
 # --- EEG prepossessing - DPX TT
-# --- Version Jul 2018
+# --- Version Sep 2018
 #
 # --- ICA decomposition, ICA summary,
 # --- save results
