@@ -310,7 +310,7 @@ for file in glob.glob(os.path.join(data_path, '*.bdf')):
                         clipping=clip)
 
     # --- 12) WRITE PRE-PROCESSING SUMMARY ---------------------
-    name = str(filename) + '_flasoc_summary'
+    name = str(filename) + '_summary'
     file = open(summary_path + '%s.txt' % name, 'w')
     # Number of Trials
     file.write('number of trials\n')
@@ -339,6 +339,6 @@ for file in glob.glob(os.path.join(data_path, '*.bdf')):
                            stim=True)
 
     # Save segmented data
-    raw_blocks.save(output_path + filename + '_flasoc-raw.fif',
+    raw_blocks.save(output_path + filename + '-raw.fif',
                     picks=picks,
                     overwrite=True)
