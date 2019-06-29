@@ -1,76 +1,86 @@
-# --- Jose C. Garcia Alanis
+# --- jose C. garcia alanis
 # --- utf-8
-# --- Python 3.6.2
+# --- Python 3.7.3 / mne 0.18.1
 #
-# --- EEG prepossessing - DPX TT
-# --- Version Sep 2018
+# --- eeg pre-processing for flanker-social
+# --- version: june 2019
 #
-# --- ICA decomposition, ICA summary,
-# --- save results
-
-# =================================================================================================
-# ------------------------------ Import relevant extensions ---------------------------------------
-import glob
-import os
-import mne
-from mne import io
-from mne.preprocessing import ICA
+# --- import data, crate info for file
+# --- save to .fif
 
 # ========================================================================
-# --- GLOBAL SETTINGS
-# --- SET PATH TO .bdf-files, summary files and output
-data_path = '/Users/Josealanis/Documents/Experiments/fla_soc/eeg/fla_soc_mne_raws/'
-summary_path = '/Users/Josealanis/Documents/Experiments/fla_soc/eeg/fla_soc_ica_summary/'
-ica_path = '/Users/Josealanis/Documents/Experiments/fla_soc/eeg/fla_soc_mne_ica/'
+# ------------------- import relevant extensions -------------------------
+import os
+import glob
+import re
 
-# Threshold for plotting
-clip = None
+from mne import pick_types
+from mne.io import read_raw_fif
+from mne.preprocessing import ICA, create_eog_epochs
+
+
+# ========================================================================
+# --- global settings
+# prompt user to set project path
+root_path = input("Type path to project directory: ")
+
+# look for directory
+if os.path.isdir(root_path):
+    print('Setting "root_path" to ', root_path)
+else:
+    raise NameError('Directory not found!')
+
+# path to eeg files
+data_path = os.path.join(root_path, 'derivatives/artifact_rejection')
+# output path
+output_path = os.path.join(root_path, 'derivatives/ica')
+
+# create directory for save
+if not os.path.isdir(os.path.join(output_path)):
+    os.mkdir(os.path.join(output_path))
+
+# files to be analysed
+files = glob.glob(os.path.join(data_path, '*-raw.fif'))
 
 # === LOOP THROUGH FILES AND RUN PRE-PROCESSING ==========================
-for file in glob.glob(os.path.join(data_path, '*-raw.fif')):
+for file in files:
 
-    # --- 1) Set up paths and file names -----------------------
+    # --- 1) set up paths and file names -----------------------
     filepath, filename = os.path.split(file)
-    filename, ext = os.path.splitext(filename)
-    print('Ready for ' + filename)
+    # subject in question
+    subj = re.findall(r'\d+', filename)[0]
+
     # --- 2) READ IN THE DATA ----------------------------------
-    # Import preprocessed data.
-    raw = io.read_raw_fif(file, preload=True)
-    # Check info
-    print(raw.info)
-    # --- 3) GET EVENT INFORMATION -----------------------------
-    # Get events
-    evs = mne.find_events(raw,
-                          stim_channel='Stim',
-                          output='onset',
-                          min_duration=0.002)
+    # import preprocessed data.
+    raw = read_raw_fif(file, preload=True)
 
     # --- 2) ICA DECOMPOSITION --------------------------------
     # ICA parameters
     n_components = 25
-    method = 'extended-infomax'
+    method = 'infomax'
+    fit_params = dict(extended=True)
     # decim = None
     reject = dict(eeg=4e-4)
 
     # Pick electrodes to use
-    picks = mne.pick_types(raw.info,
-                           meg=False,
-                           eeg=True,
-                           eog=False,
-                           stim=False)
+    picks = pick_types(raw.info,
+                       meg=False,
+                       eeg=True,
+                       eog=False,
+                       stim=False)
 
     # ICA parameters
     ica = ICA(n_components=n_components,
-              method=method)
+              method=method,
+              fit_params=fit_params)
 
     # Fit ICA
     ica.fit(raw.copy().filter(1, 50),
             picks=picks,
             reject=reject)
 
-    ica.save(ica_path + filename.split('-')[0] + '-ica.fif')
-
+    ica.save(os.path.join(output_path, '%s_ica.fif' % subj))
     # --- 3) PLOT RESULTING COMPONENTS ------------------------
     # Plot components
     ica_fig = ica.plot_components(picks=range(0, 25), show=False)
-    ica_fig.savefig(summary_path + filename.split('-')[0] + '_ica.pdf')
+    ica_fig.savefig(os.path.join(output_path, '%s_ica.pdf' % subj))
