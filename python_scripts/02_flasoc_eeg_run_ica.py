@@ -16,7 +16,7 @@ import re
 
 from mne import pick_types
 from mne.io import read_raw_fif
-from mne.preprocessing import ICA, create_eog_epochs
+from mne.preprocessing import ICA
 
 
 # ========================================================================
