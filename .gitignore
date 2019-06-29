@@ -1,2 +1,5 @@
-
 .DS_Store
+
+# PyCharm
+.idea/**
+python_scripts/.idea**
