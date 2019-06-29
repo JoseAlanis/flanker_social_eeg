@@ -18,7 +18,6 @@ from mne import pick_types
 from mne.io import read_raw_fif
 from mne.preprocessing import ICA
 
-
 # ========================================================================
 # --- global settings
 # prompt user to set project path
