@@ -164,6 +164,25 @@ for file in files:
                        '-_Incorrect incongr.': 4094
                        }
 
+
+    choice_event_id = {'P_Correct congr.': 1091,
+                       'P_Correct incongr.': 1092,
+                       'P_Incorrect congr.': 1093,
+                       'P_Incorrect incongr.': 1094,
+                       'S_Correct congr.': 2091,
+                       'S_Correct incongr.': 2092,
+                       'S_Incorrect congr.': 2093,
+                       'S_Incorrect incongr.': 2094,
+                       '-_Correct congr.': 3091,
+                       '-_Correct incongr.': 3092,
+                       '-_Incorrect congr.': 3093,
+                       '-_Incorrect incongr.': 3094,
+                       '+_Correct congr.': 4091,
+                       '+_Correct incongr.': 4092,
+                       '+_Incorrect congr.': 4093,
+                       '+_Incorrect incongr.': 4094
+                       }
+
     # Extract choice epochs
     choice_epochs = Epochs(raw, new_evs, choice_event_id,
                            on_missing='ignore',
