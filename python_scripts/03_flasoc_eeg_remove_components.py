@@ -103,6 +103,6 @@ for file in files:
                        stim=True)
 
     # Save pruned data
-    raw.save(os.path.join(output_path, '%s_pruned.fif' % subj),
+    raw.save(os.path.join(output_path, '%s_pruned-raw.fif' % subj),
              picks=picks,
              overwrite=True)
