@@ -1,52 +1,65 @@
-# --- Jose C. Garcia Alanis
+# --- jose C. garcia alanis
 # --- utf-8
-# --- Python 3.6.2
+# --- Python 3.7.3 / mne 0.18.1
 #
-# --- EEG prepossessing - DPX TT
-# --- Version Sep 2018
+# --- eeg pre-processing for flanker-social
+# --- version: june 2019
 #
-# --- Inspect ICA components, remove bad components,
-# --- save results
-
-# =================================================================================================
-# ------------------------------ Import relevant extensions ---------------------------------------
-import glob
-import os
-import mne
-from mne import io
+# --- import data, crate info for file
+# --- save to .fif
 
 # ========================================================================
-# --- GLOBAL SETTINGS
-# --- SET PATH TO .bdf-files, summary files and output
-data_path = '/Users/Josealanis/Documents/Experiments/fla_soc/eeg/fla_soc_mne_raws/'
-ica_path = '/Users/Josealanis/Documents/Experiments/fla_soc/eeg/fla_soc_mne_ica/'
-summary_path = '/Users/Josealanis/Documents/Experiments/fla_soc/eeg/fla_soc_ica_summary/'
-pruned_path = '/Users/Josealanis/Documents/Experiments/fla_soc/eeg/fla_soc_mne_pruned/'
+# ------------------- import relevant extensions -------------------------
+import os
+import glob
+import re
 
+from mne import find_events, pick_types
+from mne.io import read_raw_fif
+from mne.preprocessing import read_ica
 
-for file in glob.glob(os.path.join(data_path, '*.fif')):
+# ========================================================================
+# --- global settings
+# prompt user to set project path
+root_path = input("Type path to project directory: ")
 
-    # --- 1) Set up paths and file names -----------------------
+# look for directory
+if os.path.isdir(root_path):
+    print('Setting "root_path" to ', root_path)
+else:
+    raise NameError('Directory not found!')
+
+# path to eeg files
+data_path = os.path.join(root_path, 'derivatives/artifact_rejection')
+# path to eeg files
+ica_path = os.path.join(root_path, 'derivatives/ica')
+# output path
+output_path = os.path.join(root_path, 'derivatives/pruned')
+
+# create directory for save
+if not os.path.isdir(os.path.join(output_path)):
+    os.mkdir(os.path.join(output_path))
+
+# files to be analysed
+files = glob.glob(os.path.join(data_path, '*-raw.fif'))
+
+for file in files:
+
+    # --- 1) set up paths and file names -----------------------
     filepath, filename = os.path.split(file)
-    filename, ext = os.path.splitext(filename)
-    print(filename)
+    # subject in question
+    subj = re.findall(r'\d+', filename)[0]
 
     # --- 2) Read in the data ----------------------------------
-    raw = io.read_raw_fif(file,
-                          preload=True)
+    raw = read_raw_fif(file, preload=True)
 
-    # Check info
-    print(raw.info)
-
-    # --- 3) Get event information -----------------------------
-    #  Get events
-    evs = mne.find_events(raw,
-                          stim_channel='Stim',
-                          output='onset',
-                          min_duration=0.002)
+    events = find_events(raw,
+                         stim_channel='Status',
+                         output='onset',
+                         min_duration=0.002)
 
     # --- 4) Import ICA weights --------------------------------
-    ica = mne.preprocessing.read_ica(ica_path + filename.split('-')[0] + '-ica.fif')
+    ica = read_ica(os.path.join(ica_path, '%s_ica.fif' % subj))
 
     # --- 5) Plot components time series -----------------------
     # Select bad components for rejection
@@ -66,14 +79,14 @@ for file in glob.glob(os.path.join(data_path, '*.fif')):
     clip = None
     raw.plot(n_channels=66, title=str(filename),
              scalings=dict(eeg=100e-6),
-             events=evs,
+             events=events,
              bad_color='red',
              clipping=clip,
              block=True)
 
     # --- 6) Write summary about removed components ------------
-    name = str(filename.split('-')[0] ) + '_ica_summary'
-    file = open(summary_path + '%s.txt' % name, 'w')
+    name = '%s_ica_summary' % subj
+    file = open(os.path.join(output_path, '%s.txt' % name), 'w')
     # Number of Trials
     file.write('bad components\n')
     for cp in bad_comps:
@@ -83,13 +96,13 @@ for file in glob.glob(os.path.join(data_path, '*.fif')):
 
     # --- 7) Save raw file -----------------------------------
     # Pick electrode to use
-    picks = mne.pick_types(raw.info,
-                           meg=False,
-                           eeg=True,
-                           eog=False,
-                           stim=True)
+    picks = pick_types(raw.info,
+                       meg=False,
+                       eeg=True,
+                       eog=False,
+                       stim=True)
 
     # Save pruned data
-    raw.save(pruned_path + filename.split('-')[0] + '_pruned-raw.fif',
+    raw.save(os.path.join(output_path, '%s_pruned.fif' % subj),
              picks=picks,
              overwrite=True)
